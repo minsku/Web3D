@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body {margin: 0;}
+		</style>
+	</head>
+	<body>
+        <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+        <script type="importmap">
+          {
+            "imports": {
+              "three": "https://unpkg.com/three/build/three.module.js",
+              "three/addons/": "https://unpkg.com/three/examples/jsm/"
+            }
+          }
+        </script>
+        
+        <script type="module">
+
+            import * as THREE from 'https://unpkg.com/three/build/three.module.js';
+            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+            
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize( window.innerWidth, window.innerHeight );
+            renderer.setClearColor('rgb(1, 84, 184, 184)');
+            document.body.appendChild( renderer.domElement );
+
+            //torusknot
+            const geometry = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
+            const material = new THREE.MeshPhongMaterial( { 
+                color: 0xffff00,
+                wireframe: false,
+            } );
+            const torusKnot = new THREE.Mesh( geometry, material );
+            scene.add( torusKnot );
+            
+
+            //cube
+            /*
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            const material = new THREE.MeshPhongMaterial( { 
+              color: 0x00ff00, 
+              wireframe: false
+            } );
+            const cube = new THREE.Mesh( geometry, material );
+
+            scene.add( cube );
+            */
+
+            const axesHelper = new THREE.AxesHelper( 5 );
+            scene.add( axesHelper );
+
+            const controls = new OrbitControls( camera, renderer.domElement );
+
+            controls.minDistance = 20;
+            controls.maxDistance = 100;
+
+            camera.position.z = 5;
+            camera.position.y = 2;
+            camera.position.x = 2;
+            
+            controls.update();
+
+            camera.lookAt(axesHelper.position);
+
+            const light = new THREE.AmbientLight( 0x404040 ); // soft white light
+            scene.add( light );
+
+            // White directional light at half intensity shining from the top.
+            const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+            scene.add( directionalLight );
+
+
+            window.addEventListener( 'resize', onWindowResize );
+            function onWindowResize() {
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+                controls.update();
+
+                renderer.setSize( window.innerWidth, window.innerHeight );
+            }
+
+
+            function animate() {
+                requestAnimationFrame( animate );
+
+                //cube.rotation.x += 0.01;
+                //cube.rotation.y += 0.01;
+
+                renderer.render( scene, camera );
+            }
+
+            animate();
+        </script> 
+	</body>
+</html>

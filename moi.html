@@ -24,6 +24,10 @@
             import * as THREE from 'https://unpkg.com/three/build/three.module.js';
             import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+            import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+            import { VRButton } from 'three/addons/webxr/VRButton.js';
+
+            let landscape;
 
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -32,6 +36,11 @@
             renderer.setSize( window.innerWidth, window.innerHeight );
             renderer.setClearColor('rgb(1, 84, 184, 184)');
             document.body.appendChild( renderer.domElement );
+            renderer.toneMapping = THREE.LinearToneMapping;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.xr.enabled = true;
+
+            document.body.appendChild( VRButton.createButton( renderer ) );
 
             //torusknot
             /*const geometry = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
@@ -43,12 +52,54 @@
             scene.add( torusKnot );
             */
             
+
+            /*
             const loader = new GLTFLoader().setPath( 'models/' );
-						loader.load( 'pingu.glb', function ( gltf ) {
+						loader.load( 'lowpoly-scene.glb', function ( gltf ) {
               gltf.scene.scale.set(4,4,4);
 							scene.add( gltf.scene );
 
+						} ); */
+
+/*
+            new RGBELoader()
+					.setPath( 'textures/equirectangular/' )
+					.load( 'royal_esplanade_1k.hdr', function ( texture ) {
+
+						texture.mapping = THREE.EquirectangularReflectionMapping;
+
+						scene.background = texture;
+						scene.environment = texture;
+
+						render();
+
+						// model
+
+						const loader = new GLTFLoader().setPath( 'models/gltf/DamagedHelmet/glTF/' );
+						loader.load( 'DamagedHelmet.gltf', function ( gltf ) {
+
+							scene.add( gltf.scene );
+
+							render();
+
 						} );
+
+					} );
+*/
+          ///
+          new RGBELoader().setPath('hdr/').load('farm_field_puresky_1k.hdr', function (texture)
+          {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            scene.background = texture;
+            scene.environment = texture;
+            // model
+            const loader = new GLTFLoader().setPath('models/');
+            loader.load('lowpoly-scene2.glb', function (gltf) {
+            landscape = gltf.scene;
+            scene.add(landscape);
+            });
+          });
+          ///
 
 
             //cube
@@ -98,17 +149,11 @@
                 renderer.setSize( window.innerWidth, window.innerHeight );
             }
 
+            renderer.setAnimationLoop( function () {
+            renderer.render( scene, camera );
+            controls.update();
+            } );
 
-            function animate() {
-                requestAnimationFrame( animate );
-
-                //cube.rotation.x += 0.01;
-                //cube.rotation.y += 0.01;
-
-                renderer.render( scene, camera );
-            }
-
-            animate();
         </script> 
 	</body>
 </html>

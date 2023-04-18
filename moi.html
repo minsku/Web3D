@@ -4,208 +4,308 @@
 		<meta charset="utf-8">
 		<title>My first three.js app</title>
 		<style>
-			body {margin: 0;}
+			body { margin: 0; }
 		</style>
 	</head>
 	<body>
-        <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+		<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
 
-        <script type="importmap">
-          {
-            "imports": {
-              "three": "https://unpkg.com/three/build/three.module.js",
-              "three/addons/": "https://unpkg.com/three/examples/jsm/"
-            }
-          }
-        </script>
-        
-        <script type="module">
+		<script type="importmap">
+		{
+			"imports": {
+			"three": "https://unpkg.com/three/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three/examples/jsm/"
+			}
+		}
+		</script>
 
-            import * as THREE from 'https://unpkg.com/three/build/three.module.js';
-            import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-            import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-            import { VRButton } from 'three/addons/webxr/VRButton.js';
-            import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+		<script type="module">
 
-            let landscape;
+		import * as THREE from 'three';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+		import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+		import { VRButton } from 'three/addons/webxr/VRButton.js';
+		import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-            
-            const renderer = new THREE.WebGLRenderer();
-            renderer.setSize( window.innerWidth, window.innerHeight );
-            renderer.setClearColor('rgb(1, 84, 184, 184)');
-            document.body.appendChild( renderer.domElement );
-            renderer.toneMapping = THREE.LinearToneMapping;
-            renderer.outputEncoding = THREE.sRGBEncoding;
-            renderer.xr.enabled = true;
-
-            document.body.appendChild( VRButton.createButton( renderer ) );
-
-            //torusknot
-            /*const geometry = new THREE.TorusKnotGeometry( 10, 3, 100, 16 );
-            const material = new THREE.MeshPhongMaterial( { 
-                color: 0xffff00,
-                wireframe: false,
-            } );
-            const torusKnot = new THREE.Mesh( geometry, material );
-            scene.add( torusKnot );
-            */
-            
-
-            /*
-            const loader = new GLTFLoader().setPath( 'models/' );
-						loader.load( 'lowpoly-scene.glb', function ( gltf ) {
-              gltf.scene.scale.set(4,4,4);
-							scene.add( gltf.scene );
-
-						} ); */
-
-/*
-            new RGBELoader()
-					.setPath( 'textures/equirectangular/' )
-					.load( 'royal_esplanade_1k.hdr', function ( texture ) {
-
-						texture.mapping = THREE.EquirectangularReflectionMapping;
-
-						scene.background = texture;
-						scene.environment = texture;
-
-						render();
-
-						// model
-
-						const loader = new GLTFLoader().setPath( 'models/gltf/DamagedHelmet/glTF/' );
-						loader.load( 'DamagedHelmet.gltf', function ( gltf ) {
-
-							scene.add( gltf.scene );
-
-							render();
-
-						} );
-
-					} );
-*/
-          ///
-          new RGBELoader().setPath('hdr/').load('farm_field_puresky_1k.hdr', function (texture)
-          {
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.background = texture;
-            scene.environment = texture;
-            // model
-            const loader = new GLTFLoader().setPath('models/');
-            loader.load('lowpoly-scene2.glb', function (gltf) {
-            landscape = gltf.scene;
-            scene.add(landscape);
-            });
-          });
-          ///
+		//////////////
+		//Initialize variables
+		//////////////
+		let controller1, controller2;
+		let controllerGrip1, controllerGrip2;
+		let raycaster;
+		const intersected = [];
+		const tempMatrix = new THREE.Matrix4();
+		let group;
 
 
-            //cube
-            /*
-            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-            const material = new THREE.MeshPhongMaterial( { 
-              color: 0x00ff00, 
-              wireframe: false
-            } );
-            const cube = new THREE.Mesh( geometry, material );
+    //not these!!!
+    //const arr =['Landscape', 'Plane'];
 
-            scene.add( cube );
-            */
+		//////////////
+		//Set up the scene
+		//////////////
 
-            const axesHelper = new THREE.AxesHelper( 5 );
-            scene.add( axesHelper );
+		const scene = new THREE.Scene();
+		const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+		const renderer = new THREE.WebGLRenderer();
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		renderer.setClearColor('rgb(52, 192, 235, 235)');
+		document.body.appendChild( renderer.domElement );
+		document.body.appendChild( VRButton.createButton( renderer ) );
+		renderer.xr.enabled = true;
 
-            const controls = new OrbitControls( camera, renderer.domElement );
+		renderer.toneMapping = THREE.LinearToneMapping;
+		renderer.outputEncoding = THREE.sRGBEncoding;
 
-            controls.minDistance = 20;
-            controls.maxDistance = 100;
+		group = new THREE.Group();
+ 		scene.add(group);
 
-            camera.position.z = 5;
-            camera.position.y = 2;
-            camera.position.x = 2;
-            
-            controls.update();
+		// const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+		// const material = new THREE.MeshPhongMaterial( { 
+		// 	color: 0x00ff00, 
+		// 	wireframe: false
+		// } );
+		// const cube = new THREE.Mesh( geometry, material );
+		// scene.add( cube );
 
-            camera.lookAt(axesHelper.position);
+		const directionalLight = new THREE.DirectionalLight( 0xFFFFFF, 2 );
+		scene.add(directionalLight);
 
-            //////////////
-            //Initialize variables
-            //////////////
-            let controller1, controller2;
-            let controllerGrip1, controllerGrip2;
-            let raycaster;
-            const intersected = [];
-            const tempMatrix = new THREE.Matrix4();
-            let group;
+		// const loader = new GLTFLoader().setPath( 'models/' );
+		// 	loader.load( 'world.glb', function ( gltf ) {
+				
+		// 	scene.add( gltf.scene );
+		// } );
 
-            initVR();
-            function initVR() {
-            document.body.appendChild(VRButton.createButton(renderer));
-            renderer.xr.enabled = true;
-            }
+		new RGBELoader().setPath('hdr/').load('farm_field_puresky_1k.hdr', function (texture)
+		{
+		texture.mapping = THREE.EquirectangularReflectionMapping;
+		scene.background = texture;
+		scene.environment = texture;
 
-            controller1 = renderer.xr.getController( 0 );
-            controller1.addEventListener( 'selectstart', onSelectStart );
-            controller1.addEventListener( 'selectend', onSelectEnd );
-            scene.add( controller1 );
+		// model
+		const loader = new GLTFLoader().setPath( 'models/' );
+			loader.load( 'lowpoly-scene2.glb', function ( gltf ) {
+				gltf.scene.position.y = -2;
+				gltf.scene.position.x = -5;
+			// scene.add( gltf.scene );
+			scene.add(gltf.scene);
+		} );
+		});
+		const loader2 = new GLTFLoader().setPath( 'models/' );
+			loader2.load( 'pingu.glb', function ( gltf ) {
+				gltf.scene.position.y = -2;
+				gltf.scene.position.x = -5;
+			// scene.add( gltf.scene );
+			group.add(gltf.scene);
+		} );
 
-            controller2 = renderer.xr.getController( 1 );
-            controller2.addEventListener( 'selectstart', onSelectStart );
-            controller2.addEventListener( 'selectend', onSelectEnd );
-            scene.add( controller2 );
+	
 
-            const controllerModelFactory = new XRControllerModelFactory();
+		// const barrel = new GLTFLoader().setPath( 'models/' );
+		// 	loader.load( 'barrel.gltf', function ( gltf ) {
+		// 	scene.add( gltf.scene );
+		// } );
 
-            controllerGrip1 = renderer.xr.getControllerGrip( 0 );
-            controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
-            scene.add( controllerGrip1 );
+		const axesHelper = new THREE.AxesHelper( 5 );
+		scene.add( axesHelper );
 
-            // controllerGrip2 = renderer.xr.getControllerGrip(1);
-            //controllerGrip2.add(controllerModelFactory.createControllerModel(controllerGrip2));
-            // scene.add(controllerGrip2);
-            const loader2 = new GLTFLoader().setPath('models/gundy/');
-            loader2.load('scene.gltf', function (gltf) {
-            gltf.scene.scale.set(0.0003, 0.0003, 0.0003);
-            let mymodel = gltf.scene;
-            mymodel.rotation.y = THREE.MathUtils.degToRad(180);
-            mymodel.position.set(0, -0.01, 0);
-            controller2.add(mymodel);
-            });
+    
+		initVR();
 
-            controllerGrip2 = renderer.xr.getControllerGrip( 1 );
-            controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
-            scene.add( controllerGrip2 );
+		function initVR() {
+		document.body.appendChild(VRButton.createButton(renderer));
+		renderer.xr.enabled = true;
 
-            function onSelectStart(event) {}
-            function onSelectEnd(event) {}
+		
+			// controllers
 
-            const light = new THREE.AmbientLight( 0x404040 ); // soft white light
-            scene.add( light );
+			controller1 = renderer.xr.getController( 0 );
+			controller1.addEventListener( 'selectstart', onSelectStart );
+			controller1.addEventListener( 'selectend', onSelectEnd );
+			scene.add( controller1 );
 
-            // White directional light at half intensity shining from the top.
-            const directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-            scene.add( directionalLight );
+			controller2 = renderer.xr.getController( 1 );
+			controller2.addEventListener( 'selectstart', onSelectStart );
+			controller2.addEventListener( 'selectend', onSelectEnd );
+			scene.add( controller2 );
+
+			const controllerModelFactory = new XRControllerModelFactory();
+
+			controllerGrip1 = renderer.xr.getControllerGrip( 0 );
+			controllerGrip1.add( controllerModelFactory.createControllerModel( controllerGrip1 ) );
+			scene.add( controllerGrip1 );
+
+			// controllerGrip2 = renderer.xr.getControllerGrip( 1 );
+			// controllerGrip2.add( controllerModelFactory.createControllerModel( controllerGrip2 ) );
+			// scene.add( controllerGrip2 );
+
+			const loader2 = new GLTFLoader().setPath('models/gundy/');
+			loader2.load('scene.gltf', function (gltf) {
+			gltf.scene.scale.set(0.0003, 0.0003, 0.0003);
+			let mymodel = gltf.scene;
+			mymodel.rotation.y = THREE.MathUtils.degToRad(180);
+			mymodel.position.set(0, -0.01, 0);
+			controller2.add(mymodel);
+			});
+
+			//
+
+			const geometry = new THREE.BufferGeometry().setFromPoints( [ 
+        new THREE.Vector3( 0, 0, 0 ), 
+        new THREE.Vector3( 0, 0, -1 ) ] );
+
+			const line = new THREE.Line( geometry );
+			line.name = 'line';
+			line.scale.z = 5;
+
+			controller1.add( line.clone() );
+			controller2.add( line.clone() );
+
+			raycaster = new THREE.Raycaster();
+		}
+
+    
+
+    //
+
+		function onSelectStart( event ) {
+
+		const controller = event.target;
+
+		const intersections = getIntersections( controller );
+
+		if ( intersections.length > 0 ) {
+
+			const intersection = intersections[ 0 ];
+
+			const object = intersection.object;
+			object.material.emissive.b = 1;
+			controller.attach( object );
+
+      /////////
+      /*
+      if (!arr.includes(object.name)) {
+        //console.log('picked an object');
+        object.material.emissive.b = 1;
+        controller.attach(object);
+      }
+      */
+      /////////
+
+			controller.userData.selected = object;
+
+		}
+
+		}
+
+		function onSelectEnd( event ) {
+
+		const controller = event.target;
+
+		if ( controller.userData.selected !== undefined ) {
+
+			const object = controller.userData.selected;
+			object.material.emissive.b = 0;
+			group.attach( object );
+
+			controller.userData.selected = undefined;
+
+		}
 
 
-            window.addEventListener( 'resize', onWindowResize );
-            function onWindowResize() {
+		}
 
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
+		function getIntersections( controller ) {
 
-                controls.update();
+		tempMatrix.identity().extractRotation( controller.matrixWorld );
 
-                renderer.setSize( window.innerWidth, window.innerHeight );
-            }
+		raycaster.ray.origin.setFromMatrixPosition( controller.matrixWorld );
+		raycaster.ray.direction.set( 0, 0, - 1 ).applyMatrix4( tempMatrix );
 
-            renderer.setAnimationLoop( function () {
-            renderer.render( scene, camera );
-            controls.update();
-            } );
+		return raycaster.intersectObjects( group.children, true );
 
-        </script> 
+		}
+
+		function intersectObjects( controller ) {
+
+		// Do not highlight when already selected
+
+		if ( controller.userData.selected !== undefined ) return;
+
+		const line = controller.getObjectByName( 'line' );
+		const intersections = getIntersections( controller );
+
+		if ( intersections.length > 0 ) {
+
+			const intersection = intersections[ 0 ];
+
+			const object = intersection.object;
+
+      /////////
+      /*
+      if (!arr.includes(object.name)) {
+      //console.log('picked an object');
+      object.material.emissive.b = 1;
+      controller.attach(object);
+      }
+      */
+      ///////////
+			object.material.emissive.r = 1;
+			intersected.push( object );
+
+			line.scale.z = intersection.distance;
+
+		} else {
+
+			line.scale.z = 5;
+
+		}
+
+		}
+
+		function cleanIntersected() {
+
+		while ( intersected.length ) {
+
+			const object = intersected.pop();
+			object.material.emissive.r = 0;
+
+		}
+
+		}
+
+		const controls = new OrbitControls( camera, renderer.domElement );
+
+		controls.minDistance = 1;
+		controls.maxDistance = 50;
+
+		camera.position.z = 50;
+		camera.position.y = 2;
+		camera.position.x = 2;
+		controls.update();
+
+		camera.lookAt(axesHelper.position);
+
+		window.addEventListener('resize', onWindowResize);
+
+		function onWindowResize () {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		}
+
+		renderer.setAnimationLoop( function () {
+			cleanIntersected();
+			intersectObjects(controller1);
+			intersectObjects(controller2);
+			controls.update();
+
+			renderer.render(scene, camera);
+		} );
+
+		</script>
 	</body>
 </html>
